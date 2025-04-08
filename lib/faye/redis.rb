@@ -1,5 +1,5 @@
-require 'em-hiredis'
 require 'multi_json'
+require 'em-synchrony'
 
 require File.expand_path('../redis_factory', __FILE__)
 
@@ -16,8 +16,7 @@ module Faye
     def initialize(server, options)
       @server  = server
       @options = options
-      @factory = options[:factory] || RedisFactory.new(options)
-
+      @factory = RedisFactory.new(options)
       init
     end
 
@@ -47,6 +46,7 @@ module Faye
       return unless @redis
       @subscriber.unsubscribe(@message_channel)
       @subscriber.unsubscribe(@close_channel)
+      @subscriber.shutdown
       EventMachine.cancel_timer(@gc)
     end
 

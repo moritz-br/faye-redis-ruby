@@ -15,17 +15,21 @@ require 'faye'
 require 'faye/redis'
 
 bayeux = Faye::RackAdapter.new(
-  :mount   => '/',
-  :timeout => 25,
-  :engine  => {
-    :type  => Faye::Redis,
-    :host  => 'redis.example.com',
+  mount: '/',
+  timeout: 25,
+  engine: {
+    type: Faye::Redis,
+    host: 'redis.example.com',
+    ssl_params: {
+      ca_file: '/path/to/ca.crt',
+      verify_mode: OpenSSL::SSL::VERIFY_PEER
+    }
     # more options
   }
 )
 ```
 
-The full list of settings is as follows.
+The full list of settings is as follows:
 
 * <b>`:uri`</b> - redis URL (example: `redis://:secretpassword@example.com:9000/4`)
 * <b>`:host`</b> - hostname of your Redis instance
@@ -34,7 +38,50 @@ The full list of settings is as follows.
 * <b>`:database`</b> - number of database to use, default is `0`
 * <b>`:namespace`</b> - prefix applied to all keys, default is `''`
 * <b>`:socket`</b> - path to Unix socket if `unixsocket` is set
+* <b>`:ssl_params`</b> - SSL parameters like `:ca_file`, `:cert`, `:key`, `:verify_mode`
+* <b>`:sentinels`</b> - array of sentinel servers, each with `:host` and `:port` keys
+* <b>`:master_name`</b> - name of the Redis master for Sentinel connections
+* <b>`:pool_size`</b> - size of the Redis connection pool (default: `5`)
 
+## SSL Configuration
+
+This gem uses SSL by default for all Redis connections. You can configure the SSL connection parameters using the `:ssl_params` option:
+
+```rb
+ssl_params: {
+  ca_file: '/path/to/ca.crt',          # Path to CA certificate file
+  cert: '/path/to/client.crt',         # Path to client certificate 
+  key: '/path/to/client.key',          # Path to client key
+  verify_mode: OpenSSL::SSL::VERIFY_PEER  # Certificate verification mode
+}
+```
+
+For testing or development purposes, you can disable certificate verification:
+
+```rb
+ssl_params: {
+  verify_mode: OpenSSL::SSL::VERIFY_NONE
+}
+```
+
+## Redis Sentinel Support
+
+To use Redis Sentinel for high availability:
+
+```rb
+engine: {
+  type: Faye::Redis,
+  sentinels: [
+    { host: 'sentinel1.example.com', port: 26379 },
+    { host: 'sentinel2.example.com', port: 26379 }
+  ],
+  master_name: 'mymaster',
+  password: 'your_redis_password',
+  ssl_params: {
+    ca_file: '/path/to/ca.crt'
+  }
+}
+```
 
 ## License
 
