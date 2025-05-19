@@ -7,23 +7,23 @@ module Faye
 
     def initialize(options)
       @options = options
+      @ssl_params = @options[:ssl_params]
+
+      unless @ssl_params && @ssl_params[:ca_file]
+        raise ArgumentError, 'Missing required SSL parameter: ssl_params must contain a ca_file.'
+      end
+
+      # Ensure verify_peer is present, defaulting to true if not specified.
+      @ssl_params[:verify_peer] = true unless @ssl_params.key?(:verify_peer)
     end
 
     def call
-      uri    = @options[:uri]      || nil
-      socket = @options[:socket]   || nil
       host   = @options[:host]     || DEFAULT_HOST
       port   = @options[:port]     || DEFAULT_PORT
       auth   = @options[:password] || nil
       db     = @options[:database] || DEFAULT_DATABASE
 
-      if uri
-        EventMachine::Hiredis.connect(uri)
-      elsif socket
-        EventMachine::Hiredis::Client.new(socket, nil, auth, db).connect
-      else
-        EventMachine::Hiredis::Client.new(host, port, auth, db).connect
-      end
+      EventMachine::Hiredis::Client.new(host, port, auth, db, ssl_options: @ssl_params).connect
     end
 
   end

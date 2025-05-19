@@ -16,7 +16,16 @@ module Faye
     def initialize(server, options)
       @server  = server
       @options = options
-      @factory = options[:factory] || RedisFactory.new(options)
+
+      unless @options[:ssl_params]
+        raise ArgumentError, 'Faye::Redis engine options must include :ssl_params for Redis connection.'
+      end
+
+      # Remove unsupported options to avoid confusion
+      @options.delete(:uri)
+      @options.delete(:socket)
+
+      @factory = @options[:factory] || RedisFactory.new(@options)
 
       init
     end
